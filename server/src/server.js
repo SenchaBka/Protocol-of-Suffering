@@ -1,4 +1,4 @@
-// server.js - Load dotenv FIRST
+// server.js
 require("dotenv").config({ path: "../.env" });
 
 const express = require("express");
@@ -6,7 +6,6 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const { getChatResponse } = require("./chat");
 
-// Debug line
 console.log('API Key loaded in server.js:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
 
 const app = express();

@@ -1,5 +1,6 @@
-// chat.js
-const { OpenAI } = require("openai"); // Use require, not import
+// chat.js - to send requests to OpenAI API
+// Temporary terminal command: Invoke-RestMethod -Uri "http://localhost:3001/api/chat" -Method Post -Headers @{"Content-Type"="application/json"} -Body '{"message": "Hello!"}'^C
+const { OpenAI } = require("openai"); 
 
 console.log('API Key available in chat.js:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
 
