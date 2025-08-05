@@ -1,5 +1,4 @@
-import { PhaserGame } from './PhaserGame';
-import { EstablishConnection } from './contexts/WebsocketConnection'
+import { PhaserGame } from "./PhaserGame";
 
 function App() {
   return (
@@ -9,7 +8,6 @@ function App() {
           Phaser + React Game
         </h1>
         <PhaserGame width={800} height={600} />
-
       </div>
     </div>
   );

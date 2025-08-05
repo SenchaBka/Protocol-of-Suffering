@@ -1,49 +1,58 @@
-const IP: string = "192.168.1.158";
+const IP: string = "10.0.0.29";
 const PORT: number = 8080;
 
 const socket = new WebSocket(`ws://${IP}:${PORT}`);
 
+let responsePromise: {
+  resolve: (value: string) => void;
+  reject: (error: Error) => void;
+} | null = null;
+
 socket.addEventListener("open", () => {
   console.log("WebSocket connection established!");
   socket.send("Hi Arsenius");
-  startChat();
 });
 
 socket.addEventListener("message", (e) => {
   console.log("Server:", e.data);
+
+  // Resolve the promise if we're waiting for a response
+  if (responsePromise) {
+    responsePromise.resolve(e.data);
+    responsePromise = null;
+  }
 });
 
 socket.addEventListener("close", (event) => {
   console.log("WebSocket connection closed:", event.code, event.reason);
+
+  // Reject any pending promise if connection closes
+  if (responsePromise) {
+    responsePromise.reject(new Error("WebSocket connection closed"));
+    responsePromise = null;
+  }
 });
 
 socket.addEventListener("error", (error) => {
   console.error("WebSocket error:", error);
+
+  // Reject any pending promise if there's an error
+  if (responsePromise) {
+    responsePromise.reject(new Error("WebSocket error"));
+    responsePromise = null;
+  }
 });
 
-// Simple chat function
-function startChat() {
-  import("readline").then((readline) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
+export function getAIresponse(input: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Store the promise to resolve when we get a response
+    responsePromise = { resolve, reject };
 
-    console.log("Type your messages (press Enter to send):");
-
-    rl.on("line", (input: string) => {
-      if (input.trim()) {
-        socket.send(input.trim());
-        console.log("You:", input.trim());
-      }
-    });
-
-    // Handle Ctrl+C
-    rl.on("SIGINT", () => {
-      console.log("Closing connection...");
-      socket.close();
-      rl.close();
-      process.exit(0);
-    });
+    // Send the input to the server
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(input);
+    } else {
+      reject(new Error("WebSocket is not connected"));
+    }
   });
 }
