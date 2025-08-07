@@ -1,4 +1,4 @@
-import { PhaserGame } from './PhaserGame';
+import { PhaserGame } from "./PhaserGame";
 
 function App() {
   return (

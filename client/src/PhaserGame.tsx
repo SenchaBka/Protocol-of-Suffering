@@ -1,15 +1,15 @@
-import { useEffect, useRef } from 'react';
-import Phaser from 'phaser';
-import { GameScene } from './GameScene';
+import { useEffect, useRef } from "react";
+import Phaser from "phaser";
+import { GameScene } from "./GameScene";
 
 interface PhaserGameProps {
   width?: number;
   height?: number;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ 
-  width = 800, 
-  height = 600 
+export const PhaserGame: React.FC<PhaserGameProps> = ({
+  width = 800,
+  height = 600,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,14 +23,14 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       height,
       parent: containerRef.current,
       physics: {
-        default: 'arcade',
+        default: "arcade",
         arcade: {
-          gravity: {x: 0, y: 0 },
-          debug: false
-        }
+          gravity: { x: 0, y: 0 },
+          debug: false,
+        },
       },
       scene: [GameScene],
-      backgroundColor: '#2d2d2d'
+      backgroundColor: "#2d2d2d",
     };
 
     gameRef.current = new Phaser.Game(config);
@@ -45,12 +45,18 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div 
-        ref={containerRef} 
+      <div
+        ref={containerRef}
         className="border-2 border-gray-600 rounded-lg overflow-hidden shadow-lg"
       />
       <div className="text-center">
         <p className="text-gray-300">Use Arrow Keys or WASD to move</p>
+        <p className="text-gray-300 mt-2">
+          Move to the red dot on the right to trigger input
+        </p>
+        <p className="text-gray-300 text-sm">
+          Press Enter to submit, Escape to cancel
+        </p>
       </div>
     </div>
   );
