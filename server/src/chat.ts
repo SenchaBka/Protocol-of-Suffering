@@ -4,20 +4,57 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const IP: string = "10.0.0.29";
-const PORT: number = 8080;
+const IP = "10.0.0.29";
+const PORT = 8080;
 
-console.log('API Key available:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("Missing OPENAI_API_KEY in environment variables");
+}
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Create WebSocket server
-const wss = new WebSocketServer({
-  host: IP,
-  port: PORT,
-});
+const wss = new WebSocketServer({ host: IP, port: PORT });
+
+console.log(`WebSocket server running on ws://${IP}:${PORT}`);
+
+function broadcastMessage(message: string) {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
+  const msgString = message.toString();
+  console.log("Received:", msgString);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Use a lot of buzzy and garbage words. Be very short. Call me cutie-patutie.",
+        },
+        { role: "user", content: msgString },
+      ],
+    });
+
+    const response = completion.choices?.[0]?.message?.content;
+
+    if (response) {
+      broadcastMessage(response);
+    } else {
+      console.warn("OpenAI returned no response");
+      ws.send("Sorry, no response generated.");
+    }
+  } catch (error) {
+    console.error("OpenAI API error:", error);
+    ws.send("Error processing your request.");
+  }
+}
 
 wss.on("connection", (ws: WebSocket) => {
   console.log("Connection made");
