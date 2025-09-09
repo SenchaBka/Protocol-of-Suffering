@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { getAIresponse } from "./contexts/WebsocketConnection";
+import { getAIresponse } from "../../services/websocket/WebsocketConnection";
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
