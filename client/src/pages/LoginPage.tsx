@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 const LoginPage = () => {
   const [, setUsername] = useState("");
@@ -108,6 +110,15 @@ const LoginPage = () => {
 
   return (
     <div className="tv">
+      <GoogleLogin
+        onSuccess={(credentialResponse) => {
+          console.log(credentialResponse);
+          console.log(jwtDecode(credentialResponse.credential || ""));
+        }}
+        onError={() => {
+          console.log("Login failed");
+        }}
+      />
       <div id="terminal" ref={terminalRef} className="terminal">
         {terminalOutput.map((line, index) => (
           <div key={index} className="terminal-line">
