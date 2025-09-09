@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+import axios from "axios";
 
 const LoginPage = () => {
   const [, setUsername] = useState("");
@@ -110,14 +110,20 @@ const LoginPage = () => {
 
   return (
     <div className="tv">
+      {/*NEW: Google Login Button changed by Arsenii*/}
       <GoogleLogin
-        onSuccess={(credentialResponse) => {
-          console.log(credentialResponse);
-          console.log(jwtDecode(credentialResponse.credential || ""));
-        }}
-        onError={() => {
-          console.log("Login failed");
-        }}
+      onSuccess={async (credentialResponse) => {
+        try {
+          const token = credentialResponse.credential!;
+          const res = await axios.post("http://localhost:5000/api/auth/google", { token });
+          console.log("User data:", res.data.user);
+          console.log("JWT:", res.data.token);
+          navigate("/");
+        } catch (err) {
+          console.error("Login failed:", err);
+        }
+      }}
+      onError={() => console.log("Login failed")}
       />
       <div id="terminal" ref={terminalRef} className="terminal">
         {terminalOutput.map((line, index) => (
