@@ -1,3 +1,7 @@
+// Commands:
+// npx tsc - to complile all TypeScript files
+// ts-node - to run the
+
 import WebSocket, { WebSocketServer } from "ws";
 import { OpenAI } from "openai";
 import dotenv from "dotenv";

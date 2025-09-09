@@ -1,6 +1,6 @@
 // Commands:
 // npx tsc - to complile all TypeScript files
-// ts-node - to run the server
+// ts-node - to run the
 
 import { WebSocketServer } from "ws";
 import { setupConnection } from "./connectionHandler";
