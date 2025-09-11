@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { connectWebSocket } from "../services/websocket/WebsocketConnection"; 
 
 const LoginPage = () => {
   const [, setUsername] = useState("");
@@ -112,18 +113,24 @@ const LoginPage = () => {
     <div className="tv">
       {/*NEW: Google Login Button changed by Arsenii*/}
       <GoogleLogin
-      onSuccess={async (credentialResponse) => {
-        try {
-          const token = credentialResponse.credential!;
-          const res = await axios.post("http://localhost:5000/api/auth/google", { token });
-          console.log("User data:", res.data.user);
-          console.log("JWT:", res.data.token);
-          navigate("/");
-        } catch (err) {
-          console.error("Login failed:", err);
-        }
-      }}
-      onError={() => console.log("Login failed")}
+        onSuccess={async (credentialResponse) => {
+          try {
+            const token = credentialResponse.credential!;
+            const res = await axios.post("http://localhost:5000/api/auth/google", { token });
+            const jwtToken = res.data.token;
+            localStorage.setItem("token", jwtToken);
+
+            // Connect WebSocket after login
+            await connectWebSocket(jwtToken);
+
+            console.log("User data:", res.data.user);
+            navigate("/");
+
+          } catch (err) {
+            console.error("Login failed:", err);
+          }
+        }}
+        onError={() => console.log("Login failed")}
       />
       <div id="terminal" ref={terminalRef} className="terminal">
         {terminalOutput.map((line, index) => (
