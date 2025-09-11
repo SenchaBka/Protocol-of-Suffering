@@ -1,15 +1,15 @@
-// Commands:
-// npx tsc - to complile all TypeScript files
-// ts-node - to run the
-
 import { WebSocketServer } from "ws";
 import { setupConnection } from "./connectionHandler";
 
-const IP = "10.0.0.29";
+const IP = "0.0.0.0";
 const PORT = 8080;
 
-export const wss = new WebSocketServer({ host: IP, port: PORT });
+export let wss: WebSocketServer;
 
-wss.on("connection", setupConnection);
+export function startWebSocketServer() {
+    wss = new WebSocketServer({ host: IP, port: PORT });
 
-console.log(`Server running on ws://${IP}:${PORT}`);
+    wss.on("connection", setupConnection);
+
+    console.log(`Server running on ws://${IP}:${PORT}`);
+}

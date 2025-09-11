@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
+import { startWebSocketServer } from "./server";
 
 dotenv.config();
 const app = express();
@@ -11,7 +12,12 @@ app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URI!)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+    console.log("MongoDB connected");
+
+    // Only start WebSocket after DB is ready
+    startWebSocketServer();
+  })
   .catch(err => console.log(err));
 
 app.use("/api/auth", authRoutes);

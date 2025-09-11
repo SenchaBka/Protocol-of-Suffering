@@ -1,6 +1,9 @@
 import WebSocket from "ws";
 import { OpenAI } from "openai";
 import { wss } from "./server";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
