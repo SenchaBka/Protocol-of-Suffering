@@ -166,9 +166,11 @@ export class GameScene extends Phaser.Scene {
 
       // Display the response
       this.displayText(processedText);
-    } catch (error) {
+    } catch (error: any) {
+      // Show the actual error message from backend
       console.error("Error getting AI response:", error);
-      this.displayText("Sorry, I couldn't process that. Please try again.");
+      const errorMessage = error?.message || "Sorry, I couldn't process that. Please try again.";
+      this.displayText(`Error: ${errorMessage}`);
     }
   }
 
