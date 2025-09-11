@@ -2,8 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRoutes from "./routes/auth";
-import { startWebSocketServer } from "./server";
+import authRoutes from "./auth/auth";
+import { startWebSocketServer } from "./websocket/server";
 
 dotenv.config();
 const app = express();

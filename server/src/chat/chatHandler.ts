@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { OpenAI } from "openai";
-import { wss } from "./server";
+import { wss } from "../websocket/server";
 import dotenv from "dotenv";
 
 dotenv.config();
