@@ -5,7 +5,6 @@ import axios from "axios";
 import { connectWebSocket } from "../services/websocket/WebsocketConnection"; 
 
 const LoginPage = () => {
-  const [, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
   const [currentCommand, setCurrentCommand] = useState("");
@@ -22,7 +21,8 @@ const LoginPage = () => {
       "System initialized. Awaiting user authentication.",
       "",
       "Available commands:",
-      "  To Authenticate with advanced GOOGLE technology type: LOGIN",
+      "  To Authenticate with advanced GOOGLE technology type: ---",
+      "  To authenticate with username/password type: REGISTER or LOGIN",
       "  For supported shell commands type: HELP",
       "  To clear the terminal type: CLEAR",
       "",
@@ -38,7 +38,7 @@ const LoginPage = () => {
     setTerminalOutput((prev) => [...prev, text]);
   };
 
-  const handleCommand = (command: string) => {
+  const handleCommand = async (command: string) => {
     const parts = command.trim().split(" ");
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
@@ -47,11 +47,18 @@ const LoginPage = () => {
 
     switch (cmd) {
       case "login":
-        if (args.length === 0) {
-          addToTerminal("Error: Username required. Usage: login <username>");
+        if (args.length < 2) {
+          addToTerminal("Usage: login <email> <password>");
           return;
         }
-        handleLogin(args[0]);
+        await handlePasswordLogin(args[0], args[1]);
+        break;
+      case "register":
+        if (args.length < 3) {
+          addToTerminal("Usage: register <name> <email> <password>");
+          return;
+        }
+        await handlePasswordRegister(args[0], args[1], args[2]);
         break;
       case "help":
         addToTerminal("Available commands:");
@@ -79,24 +86,45 @@ const LoginPage = () => {
     }
   };
 
-  const handleLogin = async (user: string) => {
-    setUsername(user);
-    setIsLoading(true);
+  const handlePasswordLogin = async (email: string, password: string) => {
+      setIsLoading(true);
+      addToTerminal(`Authenticating ${email}...`);
+      try {
+        const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+        const token = res.data.token;
+        localStorage.setItem("token", token);
 
-    addToTerminal(`Authenticating user: ${user}...`);
-    addToTerminal("Connecting to server...");
+        // Connect WebSocket after login
+        await connectWebSocket(token);
 
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      addToTerminal("Authentication successful!");
-      addToTerminal("Initializing environment...");
-      addToTerminal("Redirecting...");
-
-      setTimeout(() => {
+        addToTerminal("Authentication successful!");
         navigate("/");
-      }, 1500);
-    }, 2000);
+      } catch (err: any) {
+        console.error(err);
+        addToTerminal(err.response?.data?.message || "Login failed. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+  const handlePasswordRegister = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
+    addToTerminal(`Registering ${name}...`);
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", { name, email, password });
+      const token = res.data.token;
+      localStorage.setItem("token", token);
+
+      addToTerminal("Registration successful!");
+      await connectWebSocket(token); // connect WebSocket
+      navigate("/"); // redirect
+
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      addToTerminal(`Registration failed: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

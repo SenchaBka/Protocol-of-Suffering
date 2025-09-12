@@ -31,7 +31,7 @@ function broadcastMessage(message: string) {
 }
 
 export async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
-  let character = "buzzwordBot";
+  let character = "detective";
   let userText = "";
 
   try {
@@ -39,7 +39,7 @@ export async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
     character = parsed.character || character;
     userText = parsed.text || "";
   } catch {
-    userText = message.toString(); // fallback plain text
+    userText = message.toString();
   }
 
   const systemContent = getSystemPrompt(character);

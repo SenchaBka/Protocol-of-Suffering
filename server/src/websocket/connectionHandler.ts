@@ -2,7 +2,6 @@ import WebSocket from "ws";
 import jwt from "jsonwebtoken";
 import { handleMessage } from "../chat/chatHandler";
 export function setupConnection(ws: WebSocket, req: any) {
-  // Expect JWT token as query param: ws://IP:PORT/?token=XYZ
   const params = new URLSearchParams(req.url?.split("?")[1]);
   const token = params.get("token");
 
@@ -17,9 +16,8 @@ export function setupConnection(ws: WebSocket, req: any) {
     console.log("User authenticated:", payload);
 
     // Attach user info to ws for later use
-    (ws as any).user = payload;
+    //(ws as any).user = payload;
 
-    // Keep your existing logic
     console.log("Client connected");
     ws.send("Welcome to the server!");
 

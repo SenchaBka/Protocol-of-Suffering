@@ -1,4 +1,4 @@
-const IP: string = "10.223.169.239";
+const IP: string = "192.168.2.15";
 const PORT: number = 8080;
 
 const token = localStorage.getItem("token");
