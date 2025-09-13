@@ -13,6 +13,21 @@ const LoginPage = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Suppress Google-related CORS console errors
+    const originalError = console.error;
+    console.error = (...args) => {
+      const message = args[0];
+      if (
+        typeof message === "string" &&
+        (message.includes("play.google.com/log") ||
+          message.includes("Cross-Origin-Resource-Policy") ||
+          message.includes("Beacon API cannot load"))
+      ) {
+        return; // Suppress these specific errors
+      }
+      originalError.apply(console, args);
+    };
+
     // Initialize terminal with welcome message
     setTerminalOutput([
       "WELCOME TO PROTOCOL OF SUFFERING - v0.0.1",
@@ -21,7 +36,8 @@ const LoginPage = () => {
       "System initialized. Awaiting user authentication.",
       "",
       "Available commands:",
-      "  To Authenticate with advanced GOOGLE technology type: LOGIN",
+      "  To Authenticate with advanced GOOGLE technology type: LOGIN -g",
+      "  For traditional login type: LOGIN <username>",
       "  For supported shell commands type: HELP",
       "  To clear the terminal type: CLEAR",
       "",
@@ -31,6 +47,11 @@ const LoginPage = () => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
+
+    // Cleanup function to restore original console.error
+    return () => {
+      console.error = originalError;
+    };
   }, []);
 
   const addToTerminal = (text: string) => {
@@ -50,13 +71,18 @@ const LoginPage = () => {
           addToTerminal("Error: Username required. Usage: login <username>");
           return;
         }
+        if (args[0] === "-g") {
+          handleGoogleLogin();
+          return;
+        }
         handleLogin(args[0]);
         break;
       case "help":
         addToTerminal("Available commands:");
         addToTerminal(
-          "  To Authenticate with advanced GOOGLE technology type: LOGIN"
+          "  To Authenticate with advanced GOOGLE technology type: LOGIN -g"
         );
+        addToTerminal("  For traditional login type: LOGIN <username>");
         addToTerminal("  For supported shell commands type: HELP");
         addToTerminal("  To clear the terminal type: CLEAR");
         break;
@@ -67,6 +93,12 @@ const LoginPage = () => {
           "",
           "System initialized. Awaiting user authentication.",
           "",
+          "Available commands:",
+          "  To Authenticate with advanced GOOGLE technology type: LOGIN -g",
+          "  For traditional login type: LOGIN <username>",
+          "  For supported shell commands type: HELP",
+          "  To clear the terminal type: CLEAR",
+          "",
         ]);
         break;
       default:
@@ -75,6 +107,19 @@ const LoginPage = () => {
             `Unknown command: ${cmd}. Type 'help' for available commands.`
           );
         }
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    addToTerminal("Initiating GOOGLE authentication protocol...");
+    addToTerminal("Launching secure authentication window...");
+
+    // Trigger the Google Login button click programmatically
+    const googleLoginButton = document.querySelector('[role="button"]');
+    if (googleLoginButton) {
+      (googleLoginButton as HTMLElement).click();
+    } else {
+      addToTerminal("Error: Google authentication service not available");
     }
   };
 
@@ -110,21 +155,33 @@ const LoginPage = () => {
 
   return (
     <div className="tv">
-      {/*NEW: Google Login Button changed by Arsenii*/}
-      <GoogleLogin
-      onSuccess={async (credentialResponse) => {
-        try {
-          const token = credentialResponse.credential!;
-          const res = await axios.post("http://localhost:5000/api/auth/google", { token });
-          console.log("User data:", res.data.user);
-          console.log("JWT:", res.data.token);
-          navigate("/");
-        } catch (err) {
-          console.error("Login failed:", err);
-        }
-      }}
-      onError={() => console.log("Login failed")}
-      />
+      {/* Hidden Google Login Button - accessible only via terminal command */}
+      <div
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              const token = credentialResponse.credential!;
+              const res = await axios.post(
+                "http://localhost:5001/api/auth/google",
+                { token }
+              );
+              console.log("User data:", res.data.user);
+              console.log("JWT:", res.data.token);
+              navigate("/");
+            } catch (err) {
+              console.error("Login failed:", err);
+            }
+          }}
+          onError={() => console.log("Login failed")}
+        />
+      </div>
       <div id="terminal" ref={terminalRef} className="terminal">
         {terminalOutput.map((line, index) => (
           <div key={index} className="terminal-line">
