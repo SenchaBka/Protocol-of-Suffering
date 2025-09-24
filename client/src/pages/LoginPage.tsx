@@ -13,21 +13,6 @@ const LoginPage = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Suppress Google-related CORS console errors
-    const originalError = console.error;
-    console.error = (...args) => {
-      const message = args[0];
-      if (
-        typeof message === "string" &&
-        (message.includes("play.google.com/log") ||
-          message.includes("Cross-Origin-Resource-Policy") ||
-          message.includes("Beacon API cannot load"))
-      ) {
-        return; // Suppress these specific errors
-      }
-      originalError.apply(console, args);
-    };
-
     // Initialize terminal with welcome message
     setTerminalOutput([
       "WELCOME TO PROTOCOL OF SUFFERING - v0.0.1",
@@ -47,11 +32,6 @@ const LoginPage = () => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-
-    // Cleanup function to restore original console.error
-    return () => {
-      console.error = originalError;
-    };
   }, []);
 
   const addToTerminal = (text: string) => {
