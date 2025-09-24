@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { connectWebSocket } from "../services/websocket/WebsocketConnection"; 
+import { connectWebSocket } from "../services/websocket/WebsocketConnection";
 
 const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +21,7 @@ const LoginPage = () => {
       "System initialized. Awaiting user authentication.",
       "",
       "Available commands:",
-      "  To Authenticate with advanced GOOGLE technology type: ---",
+      "  To Authenticate with advanced GOOGLE technology type: LOGIN -g",
       "  To authenticate with username/password type: REGISTER or LOGIN",
       "  For supported shell commands type: HELP",
       "  To clear the terminal type: CLEAR",
@@ -51,6 +51,10 @@ const LoginPage = () => {
           addToTerminal("Usage: login <email> <password>");
           return;
         }
+        if (args[0] === "-g") {
+          handleGoogleLogin();
+          return;
+        }
         await handlePasswordLogin(args[0], args[1]);
         break;
       case "register":
@@ -63,8 +67,9 @@ const LoginPage = () => {
       case "help":
         addToTerminal("Available commands:");
         addToTerminal(
-          "  To Authenticate with advanced GOOGLE technology type: LOGIN"
+          "  To Authenticate with advanced GOOGLE technology type: LOGIN -g"
         );
+        addToTerminal("  For traditional login type: LOGIN <username>");
         addToTerminal("  For supported shell commands type: HELP");
         addToTerminal("  To clear the terminal type: CLEAR");
         break;
@@ -74,6 +79,12 @@ const LoginPage = () => {
           "==========================================",
           "",
           "System initialized. Awaiting user authentication.",
+          "",
+          "Available commands:",
+          "  To Authenticate with advanced GOOGLE technology type: LOGIN -g",
+          "  For traditional login type: LOGIN <username>",
+          "  For supported shell commands type: HELP",
+          "  To clear the terminal type: CLEAR",
           "",
         ]);
         break;
@@ -86,42 +97,69 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    addToTerminal("Initiating GOOGLE authentication protocol...");
+    addToTerminal("Launching secure authentication window...");
+
+    // Trigger the Google Login button click programmatically
+    const googleLoginButton = document.querySelector('[role="button"]');
+    if (googleLoginButton) {
+      (googleLoginButton as HTMLElement).click();
+    } else {
+      addToTerminal("Error: Google authentication service not available");
+    }
+  };
+
   const handlePasswordLogin = async (email: string, password: string) => {
-      setIsLoading(true);
-      addToTerminal(`Authenticating ${email}...`);
-      try {
-        const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
-        const token = res.data.token;
-        localStorage.setItem("token", token);
+    setIsLoading(true);
+    addToTerminal(`Authenticating ${email}...`);
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      });
+      const token = res.data.token;
+      localStorage.setItem("token", token);
 
-        // Connect WebSocket after login
-        await connectWebSocket(token);
+      // Connect WebSocket after login
+      await connectWebSocket(token);
 
-        addToTerminal("Authentication successful!");
-        navigate("/");
-      } catch (err: any) {
-        console.error(err);
-        addToTerminal(err.response?.data?.message || "Login failed. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      addToTerminal("Authentication successful!");
+      navigate("/");
+    } catch (err: any) {
+      console.error(err);
+      addToTerminal(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handlePasswordRegister = async (name: string, email: string, password: string) => {
+  const handlePasswordRegister = async (
+    name: string,
+    email: string,
+    password: string
+  ) => {
     setIsLoading(true);
     addToTerminal(`Registering ${name}...`);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", { name, email, password });
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        name,
+        email,
+        password,
+      });
       const token = res.data.token;
       localStorage.setItem("token", token);
 
       addToTerminal("Registration successful!");
       await connectWebSocket(token); // connect WebSocket
       navigate("/"); // redirect
-
     } catch (err: any) {
       console.error("Registration failed:", err);
-      addToTerminal(`Registration failed: ${err.response?.data?.message || err.message}`);
+      addToTerminal(
+        `Registration failed: ${err.response?.data?.message || err.message}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -140,26 +178,37 @@ const LoginPage = () => {
   return (
     <div className="tv">
       {/*NEW: Google Login Button changed by Arsenii*/}
-      <GoogleLogin
-        onSuccess={async (credentialResponse) => {
-          try {
-            const token = credentialResponse.credential!;
-            const res = await axios.post("http://localhost:5000/api/auth/google", { token });
-            const jwtToken = res.data.token;
-            localStorage.setItem("token", jwtToken);
-
-            // Connect WebSocket after login
-            await connectWebSocket(jwtToken);
-
-            console.log("User data:", res.data.user);
-            navigate("/");
-
-          } catch (err) {
-            console.error("Login failed:", err);
-          }
+      <div
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          opacity: 0,
+          pointerEvents: "none",
         }}
-        onError={() => console.log("Login failed")}
-      />
+      >
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              const token = credentialResponse.credential!;
+              const res = await axios.post(
+                "http://localhost:5000/api/auth/google",
+                { token }
+              );
+              const jwtToken = res.data.token;
+              localStorage.setItem("token", jwtToken);
+
+              // Connect WebSocket after login
+              await connectWebSocket(jwtToken);
+
+              console.log("User data:", res.data.user);
+              navigate("/");
+            } catch (err) {
+              console.error("Login failed:", err);
+            }
+          }}
+          onError={() => console.log("Login failed")}
+        />
+      </div>
       <div id="terminal" ref={terminalRef} className="terminal">
         {terminalOutput.map((line, index) => (
           <div key={index} className="terminal-line">
