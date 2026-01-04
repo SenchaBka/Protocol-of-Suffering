@@ -14,7 +14,7 @@ interface GoogleRequestBody {
 
 router.post("/google", async (req: Request<{}, {}, GoogleRequestBody>, res: Response) => {
   const { token } = req.body;
-
+  
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,

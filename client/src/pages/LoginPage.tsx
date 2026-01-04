@@ -47,12 +47,12 @@ const LoginPage = () => {
 
     switch (cmd) {
       case "login":
-        if (args.length < 2) {
-          addToTerminal("Usage: login <email> <password>");
-          return;
-        }
         if (args[0] === "-g") {
           handleGoogleLogin();
+          return;
+        }
+        if (args.length < 2) {
+          addToTerminal("Usage: login <email> <password>");
           return;
         }
         await handlePasswordLogin(args[0], args[1]);
