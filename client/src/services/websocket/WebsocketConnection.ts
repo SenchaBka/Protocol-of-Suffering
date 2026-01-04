@@ -1,16 +1,16 @@
 const IP: string = "192.168.2.15";
 const PORT: number = 8080;
 
-const token = localStorage.getItem("token");
-if (token) {
-  connectWebSocket(token);
-}
-
 let socket: WebSocket | null = null;
 let responsePromise: {
   resolve: (value: string) => void;
   reject: (error: Error) => void;
 } | null = null;
+
+const token = localStorage.getItem("token");
+if (token) {
+  connectWebSocket(token);
+}
 
 export function connectWebSocket(jwtToken: string) {
   return new Promise<WebSocket>((resolve, reject) => {
