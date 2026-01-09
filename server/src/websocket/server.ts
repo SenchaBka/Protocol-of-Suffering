@@ -11,5 +11,5 @@ export function startWebSocketServer() {
 
     wss.on("connection", setupConnection);
 
-    console.log(`Server running on ws://${IP}:${PORT}`);
+    console.log(`Websocket Server running on ws://${IP}:${PORT}`);
 }
