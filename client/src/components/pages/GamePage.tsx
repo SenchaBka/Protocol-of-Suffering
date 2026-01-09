@@ -1,4 +1,4 @@
-import { PhaserGame } from "../components/organisms/PhaserGame";
+import { PhaserGame } from "../organisms/PhaserGame";
 
 const GamePage = () => {
   return (

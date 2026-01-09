@@ -4,8 +4,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import GamePage from "./pages/GamePage";
+import LoginPage from "./components/pages/LoginPage";
+import GamePage from "./components/pages/GamePage";
 
 function App() {
   return (
