@@ -1,15 +1,16 @@
 import { useEffect, useRef } from "react";
 import Phaser from "phaser";
-import { GameScene } from "./GameScene";
 
 interface PhaserGameProps {
   width?: number;
   height?: number;
+  scenes: (typeof Phaser.Scene)[]; // pass scenes in
 }
 
 export const PhaserGame: React.FC<PhaserGameProps> = ({
   width = 800,
   height = 600,
+  scenes,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,7 +33,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       audio: {
         disableWebAudio: true,
       },
-      scene: [GameScene],
+      scene: scenes,
       backgroundColor: "#2d2d2d",
     };
 
@@ -44,7 +45,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
         gameRef.current = null;
       }
     };
-  }, [width, height]);
+  }, [width, height, scenes]);
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -64,3 +65,5 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     </div>
   );
 };
+
+export default PhaserGame;
