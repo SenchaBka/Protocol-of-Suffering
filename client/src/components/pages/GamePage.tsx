@@ -1,4 +1,5 @@
 import { PhaserGame } from "../organisms/PhaserGame";
+import { EntryScene } from "../organisms/scenes/EntryScene";
 
 const GamePage = () => {
   return (
@@ -7,7 +8,7 @@ const GamePage = () => {
         <h1 className="text-6xl font-bold text-center mb-8">
           Welcome!
         </h1>
-        <PhaserGame width={800} height={600} />
+        <PhaserGame width={800} height={600} scenes={[EntryScene]} />
       </div>
     </div>
   );
