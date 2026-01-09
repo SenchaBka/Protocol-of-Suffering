@@ -7,11 +7,6 @@ let responsePromise: {
   reject: (error: Error) => void;
 } | null = null;
 
-const token = localStorage.getItem("token");
-if (token) {
-  connectWebSocket(token);
-}
-
 export function connectWebSocket(jwtToken: string) {
   // Return existing open socket if present
   if (socket && socket.readyState === WebSocket.OPEN) return Promise.resolve(socket);
