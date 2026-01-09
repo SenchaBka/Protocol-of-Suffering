@@ -1,11 +1,6 @@
 const IP: string = "192.168.2.15";
 const PORT: number = 8080;
 
-const token = localStorage.getItem("token");
-if (token) {
-  connectWebSocket(token);
-}
-
 let socket: WebSocket | null = null;
 let responsePromise: {
   resolve: (value: string) => void;
@@ -13,12 +8,23 @@ let responsePromise: {
 } | null = null;
 
 export function connectWebSocket(jwtToken: string) {
+  // Return existing open socket if present
+  if (socket && socket.readyState === WebSocket.OPEN) return Promise.resolve(socket);
+
   return new Promise<WebSocket>((resolve, reject) => {
-    socket = new WebSocket(`ws://${IP}:${PORT}/?token=${jwtToken}`);
+    try {
+      socket = new WebSocket(`ws://${IP}:${PORT}/?token=${jwtToken}`);
+    } catch (err) {
+      return reject(err);
+    }
 
     socket.addEventListener("open", () => {
       console.log("WebSocket connection established!");
-      socket!.send("Hi Arsenius");
+      try {
+        socket!.send("Hi Arsenius");
+      } catch (e) {
+        console.warn("Could not send greetings message:", e);
+      }
       resolve(socket!);
     });
 
@@ -33,8 +39,10 @@ export function connectWebSocket(jwtToken: string) {
 
     socket.addEventListener("close", () => {
       console.log("Disconnected. Reconnecting...");
+      // clear socket reference so subsequent calls try to reconnect
+      socket = null;
       setTimeout(() => {
-        connectWebSocket(jwtToken);
+        connectWebSocket(jwtToken).catch(() => {});
       }, 1000);
     });
 
@@ -49,13 +57,28 @@ export function connectWebSocket(jwtToken: string) {
   });
 }
 
-export function getAIresponse(input: string): Promise<string> {
-  return new Promise((resolve, reject) => {
+export async function getAIresponse(input: string): Promise<string> {
+  return new Promise(async (resolve, reject) => {
     responsePromise = { resolve, reject };
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(input);
-    } else {
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return reject(new Error("No auth token available"));
+
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        await connectWebSocket(token);
+      }
+
+      socket!.send(input);
+    } catch (err) {
+      responsePromise = null;
       reject(new Error("WebSocket is not connected"));
     }
   });
+}
+
+// Initialize after the variables and functions are defined
+const token = localStorage.getItem("token");
+if (token) {
+  connectWebSocket(token).catch((e) => console.error("Initial WS connect failed:", e));
 }

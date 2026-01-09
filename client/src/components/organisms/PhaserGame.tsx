@@ -29,6 +29,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
           debug: false,
         },
       },
+      audio: {
+        disableWebAudio: true,
+      },
       scene: [GameScene],
       backgroundColor: "#2d2d2d",
     };
