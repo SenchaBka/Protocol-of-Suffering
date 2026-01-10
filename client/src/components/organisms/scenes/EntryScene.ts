@@ -1,17 +1,17 @@
 import Phaser from "phaser";
 import professorSprite from "../../../assets/sprites/professor-sprite.png";
 import backgroundImage from "../../../assets/background/entry-scene.jpg";
-import { getAIresponse } from "../../../services/websocket/WebsocketConnection";
 import PlayerCharacter from "../characters/PlayerCharacter";
+import { processUserMessage } from "../../../services/dialogue";
+import InputBox from "../../../services/inputBox";
 
 export class EntryScene extends Phaser.Scene {
   private player!: PlayerCharacter;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 200;
   private triggerZone!: Phaser.GameObjects.Rectangle;
-  private redDot!: Phaser.GameObjects.Graphics;
   private isInTriggerZone = false;
-  private inputBox!: HTMLInputElement;
+  private inputBox?: InputBox;
   private textBox!: Phaser.GameObjects.Text;
   private isInputActive = false;
 
@@ -72,66 +72,41 @@ export class EntryScene extends Phaser.Scene {
     }
   }
 
-  private showInputBox() {
+  private async showInputBox() {
     if (this.isInputActive) return;
     this.isInputActive = true;
 
-    this.inputBox = document.createElement("input");
-    this.inputBox.type = "text";
-    this.inputBox.placeholder = "Type your message...";
-    this.inputBox.style.position = "absolute";
-    this.inputBox.style.zIndex = "1000";
-    this.inputBox.style.padding = "8px";
-    this.inputBox.style.border = "2px solid #ffffff";
-    this.inputBox.style.borderRadius = "4px";
-    this.inputBox.style.backgroundColor = "#000000";
-    this.inputBox.style.color = "#ffffff";
-    this.inputBox.style.fontSize = "14px";
+    this.inputBox = new InputBox(this);
 
     const playerX = this.player.sprite.x;
     const playerY = this.player.sprite.y;
-    const playerScreenPos = this.cameras.main.getWorldPoint(playerX, playerY);
+    const camera = this.cameras.main;
+    const canvasRect = this.game.canvas.getBoundingClientRect();
 
-    this.inputBox.style.left = `${playerScreenPos.x - 75}px`;
-    this.inputBox.style.top = `${playerScreenPos.y - 100}px`;
-    this.inputBox.style.width = "150px";
+    // world -> screen -> page
+    const screenX = playerX - camera.worldView.x;
+    const screenY = playerY - camera.worldView.y;
+    const pageX = canvasRect.left + screenX;
+    const pageY = canvasRect.top + screenY;
 
-    document.body.appendChild(this.inputBox);
-    this.inputBox.focus();
+    // show input above player (tweak offsets as needed)
+    const offsetX = 75;  // half input width
+    const offsetY = 100; // distance above the character
+    const result = await this.inputBox.showAt(pageX - offsetX, pageY - offsetY);
 
-    this.input.keyboard!.enabled = false;
-
-    this.inputBox.addEventListener("keydown", async (event) => {
-      event.stopPropagation();
-
-      if (event.key === "Enter") {
-        const userInput = this.inputBox.value;
-        this.hideInputBox();
-        await this.processUserInput(userInput);
-      } else if (event.key === "Escape") {
-        this.hideInputBox();
-      }
-    });
-  }
-
-  private hideInputBox() {
-    if (this.inputBox && this.inputBox.parentNode) {
-      this.inputBox.parentNode.removeChild(this.inputBox);
-    }
     this.isInputActive = false;
-    this.input.keyboard!.enabled = true;
-  }
+    this.inputBox = undefined;
 
-  private async processUserInput(userInput: string): Promise<void> {
+    if (result === null) return;
+
+    this.displayText("Processing your message...");
     try {
-      this.displayText("Processing your message...");
-      const processedText = await getAIresponse(userInput);
+      const processedText = await processUserMessage(result);
       this.displayText(processedText);
     } catch (error: any) {
       console.error("Error getting AI response:", error);
-      const errorMessage =
-        error?.message || "Sorry, I couldn't process that. Please try again.";
-      this.displayText(`Error: ${errorMessage}`);
+      const message = error?.message || "Sorry, I couldn't process that. Please try again.";
+      this.displayText(`Error: ${message}`);
     }
   }
 
@@ -195,10 +170,17 @@ export class EntryScene extends Phaser.Scene {
     if (this.isInputActive && this.inputBox) {
       const playerX = this.player.sprite.x;
       const playerY = this.player.sprite.y;
-      const playerScreenPos = this.cameras.main.getWorldPoint(playerX, playerY);
+      const camera = this.cameras.main;
+      const canvasRect = this.game.canvas.getBoundingClientRect();
 
-      this.inputBox.style.left = `${playerScreenPos.x - 75}px`;
-      this.inputBox.style.top = `${playerScreenPos.y - 100}px`;
+      const screenX = playerX - camera.worldView.x;
+      const screenY = playerY - camera.worldView.y;
+      const pageX = canvasRect.left + screenX;
+      const pageY = canvasRect.top + screenY;
+
+      const offsetX = 75;
+      const offsetY = 100;
+      this.inputBox.setPosition(pageX - offsetX, pageY - offsetY);
     }
   }
 }
