@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { connectWebSocket } from "../../services/websocket/WebsocketConnection";
+import { connectWebSocket, disconnectWebSocket } from "../../services/websocket/WebsocketConnection";
 
 const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +88,17 @@ const LoginPage = () => {
           "",
         ]);
         break;
+      case "logout":
+        // Perform client-side logout: remove token, close WS, and go to login
+        localStorage.removeItem("token");
+        try {
+          disconnectWebSocket();
+        } catch (e) {
+          console.warn("Error disconnecting websocket:", e);
+        }
+        addToTerminal("Logged out.");
+        navigate("/login");
+        break;
       default:
         if (command.trim()) {
           addToTerminal(
@@ -121,11 +132,14 @@ const LoginPage = () => {
       const token = res.data.token;
       localStorage.setItem("token", token);
 
-      // Connect WebSocket after login
-      await connectWebSocket(token);
+      // Connect WebSocket after login (do not block navigation)
+      connectWebSocket(token).catch((e) => {
+        console.error("WebSocket connect failed:", e);
+        addToTerminal("Warning: WebSocket connection failed.");
+      });
 
       addToTerminal("Authentication successful!");
-      navigate("/");
+      navigate("/welcome");
     } catch (err: any) {
       console.error(err);
       addToTerminal(
@@ -153,8 +167,12 @@ const LoginPage = () => {
       localStorage.setItem("token", token);
 
       addToTerminal("Registration successful!");
-      await connectWebSocket(token); // connect WebSocket
-      navigate("/"); // redirect
+      // Attempt WebSocket connection but don't block navigation
+      connectWebSocket(token).catch((e) => {
+        console.error("WebSocket connect failed:", e);
+        addToTerminal("Warning: WebSocket connection failed.");
+      });
+      navigate("/welcome"); // redirect
     } catch (err: any) {
       console.error("Registration failed:", err);
       addToTerminal(
@@ -197,11 +215,14 @@ const LoginPage = () => {
               const jwtToken = res.data.token;
               localStorage.setItem("token", jwtToken);
 
-              // Connect WebSocket after login
-              await connectWebSocket(jwtToken);
+              // Connect WebSocket after login (do not block navigation)
+              connectWebSocket(jwtToken).catch((e) => {
+                console.error("WebSocket connect failed:", e);
+                addToTerminal("Warning: WebSocket connection failed.");
+              });
 
               console.log("User data:", res.data.user);
-              navigate("/");
+              navigate("/welcome");
             } catch (err) {
               console.error("Login failed:", err);
             }

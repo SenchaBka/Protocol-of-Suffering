@@ -41,9 +41,9 @@ export function connectWebSocket(jwtToken: string) {
       console.log("Disconnected. Reconnecting...");
       // clear socket reference so subsequent calls try to reconnect
       socket = null;
-      setTimeout(() => {
-        connectWebSocket(jwtToken).catch(() => {});
-      }, 1000);
+      //setTimeout(() => {
+      //  connectWebSocket(jwtToken).catch(() => {});
+      //}, 1000);
     });
 
     socket.addEventListener("error", (error) => {
@@ -77,8 +77,23 @@ export async function getAIresponse(input: string): Promise<string> {
   });
 }
 
-// Initialize after the variables and functions are defined
-const token = localStorage.getItem("token");
-if (token) {
-  connectWebSocket(token).catch((e) => console.error("Initial WS connect failed:", e));
+// Helper: cleanly close the WebSocket connection
+export function disconnectWebSocket() {
+  if (socket) {
+    try {
+      // Normal closure with close code 1000 (OK)
+      socket.close(1000, "Client disconnect");
+    } catch (e) {
+      console.warn("Error while closing socket:", e);
+    }
+    // Ensure any pending response promise is cleared
+    responsePromise = null;
+    socket = null;
+  }
 }
+
+// Initialize after the variables and functions are defined
+//const token = localStorage.getItem("token");
+//if (token) {
+//  connectWebSocket(token).catch((e) => console.error("Initial WS connect failed:", e));
+//}
