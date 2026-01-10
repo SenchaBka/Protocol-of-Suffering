@@ -19,7 +19,7 @@ export function setupConnection(ws: WebSocket, req: any) {
     //(ws as any).user = payload;
 
     console.log("Client connected");
-    ws.send("Welcome to the server!");
+    ws.send(JSON.stringify({ type: "welcome", text: "Welcome to the server!" }));
 
     ws.on("message", (msg) => handleMessage(ws, msg));
 

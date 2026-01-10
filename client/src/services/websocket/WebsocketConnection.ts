@@ -2,10 +2,20 @@ const IP: string = "192.168.2.15";
 const PORT: number = 8080;
 
 let socket: WebSocket | null = null;
+// request tracking
 let responsePromise: {
   resolve: (value: string) => void;
   reject: (error: Error) => void;
+  id: number;
 } | null = null;
+
+let responseTimeout: ReturnType<typeof setTimeout> | null = null;
+let currentRequestId = 0;
+
+function cleanupPending(err?: Error) {
+  if (responseTimeout) { clearTimeout(responseTimeout); responseTimeout = null; }
+  if (responsePromise) { responsePromise.reject(err ?? new Error("Socket closed")); responsePromise = null; }
+}
 
 export function connectWebSocket(jwtToken: string) {
   // Return existing open socket if present
@@ -29,29 +39,44 @@ export function connectWebSocket(jwtToken: string) {
     });
 
     socket.addEventListener("message", (e) => {
-      console.log("Server:", e.data);
+      // Try parse structured JSON messages
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(e.data as string);
+      } catch {
+        parsed = null;
+      }
 
-      if (responsePromise) {
-        responsePromise.resolve(e.data);
+      // Only resolve when it's an ai_response matching our request id
+      if (parsed && parsed.type === "ai_response" && responsePromise && parsed.id === responsePromise.id) {
+        if (responseTimeout) { clearTimeout(responseTimeout); responseTimeout = null; }
+        responsePromise.resolve(parsed.text);
         responsePromise = null;
+        return;
+      }
+
+      // Log welcome messages
+      if (parsed && parsed.type === "welcome") {
+        console.log("Server welcome:", parsed.text);
+        return;
+      }
+
+      // If message is unstructured, ignore obvious welcome text to avoid accidental resolves
+      if (responsePromise && typeof e.data === "string" && /welcome/i.test(e.data as string)) {
+        console.log("Ignored server welcome message");
+        return;
       }
     });
 
     socket.addEventListener("close", () => {
       console.log("Disconnected. Reconnecting...");
-      // clear socket reference so subsequent calls try to reconnect
+      cleanupPending();
       socket = null;
-      //setTimeout(() => {
-      //  connectWebSocket(jwtToken).catch(() => {});
-      //}, 1000);
     });
 
     socket.addEventListener("error", (error) => {
       console.error("WebSocket error:", error);
-      if (responsePromise) {
-        responsePromise.reject(new Error("WebSocket error"));
-        responsePromise = null;
-      }
+      cleanupPending(new Error("WebSocket error"));
       reject(error);
     });
   });
@@ -59,8 +84,6 @@ export function connectWebSocket(jwtToken: string) {
 
 export async function getAIresponse(input: string): Promise<string> {
   return new Promise(async (resolve, reject) => {
-    responsePromise = { resolve, reject };
-
     try {
       const token = localStorage.getItem("token");
       if (!token) return reject(new Error("No auth token available"));
@@ -69,9 +92,22 @@ export async function getAIresponse(input: string): Promise<string> {
         await connectWebSocket(token);
       }
 
-      socket!.send(input);
+      const id = ++currentRequestId;
+      responsePromise = { resolve, reject, id };
+
+      responseTimeout = setTimeout(() => {
+        if (responsePromise) {
+          responsePromise.reject(new Error("Timed out waiting for server response"));
+          responsePromise = null;
+        }
+        responseTimeout = null;
+      }, 15000);
+
+      // Send structured request the server can parse
+      socket!.send(JSON.stringify({ type: "request", id, text: input }));
     } catch (err) {
       responsePromise = null;
+      if (responseTimeout) { clearTimeout(responseTimeout); responseTimeout = null; }
       reject(new Error("WebSocket is not connected"));
     }
   });
@@ -91,9 +127,3 @@ export function disconnectWebSocket() {
     socket = null;
   }
 }
-
-// Initialize after the variables and functions are defined
-//const token = localStorage.getItem("token");
-//if (token) {
-//  connectWebSocket(token).catch((e) => console.error("Initial WS connect failed:", e));
-//}

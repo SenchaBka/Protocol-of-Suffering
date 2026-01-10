@@ -21,23 +21,16 @@ function getSystemPrompt(character: string): string {
   return characterPrompts[character] ?? "Be neutral and helpful.";
 }
 
-// Broadcast message to all connected clients
-function broadcastMessage(message: string) {
-  wss.clients.forEach((client: WebSocket) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-}
-
 export async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
   let character = "detective";
   let userText = "";
+  let requestId: number | undefined;
 
   try {
     const parsed = JSON.parse(message.toString());
     character = parsed.character || character;
     userText = parsed.text || "";
+    requestId = parsed.id;
   } catch {
     userText = message.toString();
   }
@@ -56,13 +49,15 @@ export async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
     const response = completion.choices?.[0]?.message?.content;
 
     if (response) {
-      broadcastMessage(response);
+      const payload: any = { type: "ai_response", text: response };
+      if (requestId !== undefined) payload.id = requestId;
+      ws.send(JSON.stringify(payload));
     } else {
       console.warn("OpenAI returned no response");
-      ws.send("Sorry, no response generated.");
+      ws.send(JSON.stringify({ type: "error", text: "Sorry, no response generated.", ...(requestId !== undefined ? { id: requestId } : {}) }));
     }
   } catch (error) {
     console.error("OpenAI API error:", error);
-    ws.send("Error processing your request.");
+    ws.send(JSON.stringify({ type: "error", text: "Error processing your request.", ...(requestId !== undefined ? { id: requestId } : {}) }));
   }
 }
