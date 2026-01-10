@@ -22,5 +22,4 @@ npm run dev
 
 # To run server:
 cd server
-cd src
-ts-node index.ts
+npm run dev
