@@ -38,6 +38,14 @@ router.post("/google", async (req: Request<{}, {}, GoogleRequestBody>, res: Resp
 
     const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "1h" });
 
+    // Store server-signed JWT in cookie (not the raw Google id token)
+    res.cookie("token", jwtToken, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "strict", 
+      maxAge: 60 * 60 * 1000  // 1h
+    });
+
     res.json({ token: jwtToken, user });
   } catch (err) {
     console.error(err);
@@ -71,6 +79,13 @@ router.post("/register", async (req: Request<{}, {}, RegisterRequestBody>, res: 
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET!, { expiresIn: "1h" });
 
+    res.cookie("token", token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "strict", 
+      maxAge: 60 * 60 * 1000  // 1h
+    });
+
     res.json({ token, user: newUser });
   } catch (err) {
     console.error(err);
@@ -89,11 +104,18 @@ router.post("/login", async (req: Request<{}, {}, LoginRequestBody>, res: Respon
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-    if (!user.password) return res.status(400).json({ message: "Invalid credentials" });
+    // Combined check + bcrypt.compare
+    if (!user || !user.password || !await bcrypt.compare(password, user.password)) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "1h" });
+
+    // Secure cookie
+    res.cookie("token", token, { 
+      httpOnly: true, secure: process.env.NODE_ENV === "production", 
+      sameSite: "strict", maxAge: 3600000 
+    });
 
     res.json({ token, user });
   } catch (err) {
