@@ -2,9 +2,10 @@ import Phaser from "phaser";
 import professorSprite from "../../../assets/sprites/professor-sprite.png";
 import backgroundImage from "../../../assets/background/entry-scene.jpg";
 import { getAIresponse } from "../../../services/websocket/WebsocketConnection";
+import PlayerCharacter from "../characters/PlayerCharacter";
 
 export class EntryScene extends Phaser.Scene {
-  private player!: Phaser.Physics.Arcade.Sprite;
+  private player!: PlayerCharacter;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 200;
   private triggerZone!: Phaser.GameObjects.Rectangle;
@@ -13,7 +14,6 @@ export class EntryScene extends Phaser.Scene {
   private inputBox!: HTMLInputElement;
   private textBox!: Phaser.GameObjects.Text;
   private isInputActive = false;
-  private facingRight = true;
 
   constructor() {
     super({ key: "EntryScene" });
@@ -35,38 +35,16 @@ export class EntryScene extends Phaser.Scene {
     background.setDisplaySize(gameWidth * 1.5, gameHeight * 1.13);
     background.setDepth(-1);
 
-    const walk = {
-      key: "walk",
-      frames: this.anims.generateFrameNumbers("professor-sprite", {
-        frames: [2, 3, 4, 5, 6, 7, 8, 9],
-      }),
-      frameRate: 8,
-      repeat: -1,
-    };
 
-    const idle = {
-      key: "idle",
-      frames: this.anims.generateFrameNumbers("professor-sprite", {
-        frames: [0, 1],
-      }),
-      frameRate: 2,
-      repeat: -1,
-    };
-
-    this.anims.create(walk);
-    this.anims.create(idle);
 
     const startX = 40;
     const startY = this.scale.height - 40;
-    this.player = this.physics.add.sprite(startX, startY, "professor-sprite");
-    this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.3);
-    this.player.play("idle", true);
+    this.player = new PlayerCharacter(this, startX, startY, "professor-sprite");
 
     this.triggerZone = this.add.rectangle(750, 500, 100, 200, 0xff0000, 0.3);
     this.physics.add.existing(this.triggerZone, false);
     this.physics.add.overlap(
-      this.player,
+      this.player.sprite,
       this.triggerZone,
       this.onEnterTriggerZone,
       undefined,
@@ -84,19 +62,7 @@ export class EntryScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
-    this.input.keyboard!.on("keydown-A", () =>
-      this.player.setVelocityX(-this.speed)
-    );
-    this.input.keyboard!.on("keyup-A", () => {
-      if (this.player.body!.velocity.x < 0) this.player.setVelocityX(0);
-    });
 
-    this.input.keyboard!.on("keydown-D", () =>
-      this.player.setVelocityX(this.speed)
-    );
-    this.input.keyboard!.on("keyup-D", () => {
-      if (this.player.body!.velocity.x > 0) this.player.setVelocityX(0);
-    });
   }
 
   private onEnterTriggerZone() {
@@ -122,8 +88,8 @@ export class EntryScene extends Phaser.Scene {
     this.inputBox.style.color = "#ffffff";
     this.inputBox.style.fontSize = "14px";
 
-    const playerX = this.player.x;
-    const playerY = this.player.y;
+    const playerX = this.player.sprite.x;
+    const playerY = this.player.sprite.y;
     const playerScreenPos = this.cameras.main.getWorldPoint(playerX, playerY);
 
     this.inputBox.style.left = `${playerScreenPos.x - 75}px`;
@@ -191,73 +157,44 @@ export class EntryScene extends Phaser.Scene {
     let isMoving = false;
 
     if (left.isDown) {
-      this.player.setVelocityX(-this.speed);
+      this.player.moveLeft(this.speed);
       isMoving = true;
-      if (this.facingRight) {
-        this.player.setFlipX(true);
-        this.facingRight = false;
-      }
     } else if (right.isDown) {
-      this.player.setVelocityX(this.speed);
+      this.player.moveRight(this.speed);
       isMoving = true;
-      if (!this.facingRight) {
-        this.player.setFlipX(false);
-        this.facingRight = true;
+    } else {
+      const aKey = this.input.keyboard!.keys.find(
+        (key) => key && key.keyCode === 65 && key.isDown
+      );
+      const dKey = this.input.keyboard!.keys.find(
+        (key) => key && key.keyCode === 68 && key.isDown
+      );
+
+      if (aKey) {
+        this.player.moveLeft(this.speed);
+        isMoving = true;
+      } else if (dKey) {
+        this.player.moveRight(this.speed);
+        isMoving = true;
+      } else {
+        this.player.stop();
       }
-    } else if (
-      !this.input.keyboard!.keys.find(
-        (key) => key && (key.keyCode === 65 || key.keyCode === 68) && key.isDown
-      )
-    ) {
-      this.player.setVelocityX(0);
     }
 
+    // ensure vertical velocity is zero (character doesn't fall)
     this.player.setVelocityY(0);
 
-    const aKey = this.input.keyboard!.keys.find(
-      (key) => key && key.keyCode === 65 && key.isDown
-    );
-    const dKey = this.input.keyboard!.keys.find(
-      (key) => key && key.keyCode === 68 && key.isDown
-    );
-
-    if (aKey) {
-      if (this.facingRight) {
-        this.player.setFlipX(true);
-        this.facingRight = false;
-      }
-    }
-    if (dKey) {
-      if (!this.facingRight) {
-        this.player.setFlipX(false);
-        this.facingRight = true;
-      }
-    }
-
-    if (aKey || dKey) {
-      isMoving = true;
-    }
-
-    if (isMoving) {
-      if (this.player.anims.currentAnim?.key !== "walk") {
-        this.player.play("walk", true);
-      }
-    } else {
-      if (this.player.anims.currentAnim?.key !== "idle") {
-        this.player.play("idle", true);
-      }
-    }
 
     if (
       this.isInTriggerZone &&
-      !this.physics.overlap(this.player, this.triggerZone)
+      !this.physics.overlap(this.player.sprite, this.triggerZone)
     ) {
       this.isInTriggerZone = false;
     }
 
     if (this.isInputActive && this.inputBox) {
-      const playerX = this.player.x;
-      const playerY = this.player.y;
+      const playerX = this.player.sprite.x;
+      const playerY = this.player.sprite.y;
       const playerScreenPos = this.cameras.main.getWorldPoint(playerX, playerY);
 
       this.inputBox.style.left = `${playerScreenPos.x - 75}px`;
