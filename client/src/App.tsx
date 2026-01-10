@@ -12,7 +12,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<GamePage />} />
+        <Route path="/welcome" element={<GamePage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
