@@ -18,4 +18,10 @@ const userSchema = new Schema<IUser>({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Ensure the unique index ignores missing/null values
+userSchema.index(
+  { googleId: 1 },
+  { unique: true, partialFilterExpression: { googleId: { $type: "string" } } }
+);
+
 export default model<IUser>("User", userSchema);
