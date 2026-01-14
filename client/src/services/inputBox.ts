@@ -78,5 +78,7 @@ export default class InputBox {
     this._isActive = false;
     // re-enable Phaser keyboard
     this.scene.input.keyboard!.enabled = true;
+    // clear any lingering key states to prevent stray input
+    this.scene.input.keyboard!.resetKeys();
   }
 }
