@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import professorSprite from "../../../assets/sprites/professor-sprite.png";
 import backgroundImage from "../../../assets/background/entry-scene.jpg";
+import triggerZone from "../../../assets/characters/entry_scene_sceleton.png";
 import PlayerCharacter from "../characters/PlayerCharacter";
 import { processUserMessage } from "../../../services/dialogue";
 import InputBox from "../../../services/inputBox";
@@ -9,8 +10,8 @@ export class EntryScene extends Phaser.Scene {
   private player!: PlayerCharacter;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 200;
-  private triggerZone!: Phaser.GameObjects.Rectangle;
   private isInTriggerZone = false;
+  private triggerZone!: Phaser.Physics.Arcade.Sprite;
   private inputBox?: InputBox;
   private textBox!: Phaser.GameObjects.Text;
   private isInputActive = false;
@@ -25,6 +26,7 @@ export class EntryScene extends Phaser.Scene {
       frameWidth: 307.2,
       frameHeight: 517,
     });
+    this.load.image("trigger-image", triggerZone);
   }
 
   create() {
@@ -41,8 +43,9 @@ export class EntryScene extends Phaser.Scene {
     const startY = this.scale.height - 40;
     this.player = new PlayerCharacter(this, startX, startY, "professor-sprite");
 
-    this.triggerZone = this.add.rectangle(750, 500, 100, 200, 0xff0000, 0.3);
-    this.physics.add.existing(this.triggerZone, false);
+    this.triggerZone = this.physics.add.sprite(750, 500, "trigger-image"); 
+    (this.triggerZone as Phaser.Physics.Arcade.Sprite).setImmovable(true);
+    this.triggerZone.setScale(0.43);
     this.physics.add.overlap(
       this.player.sprite,
       this.triggerZone,
