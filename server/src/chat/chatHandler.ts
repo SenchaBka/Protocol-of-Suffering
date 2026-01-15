@@ -2,6 +2,8 @@ import WebSocket from "ws";
 import { OpenAI } from "openai";
 import { wss } from "../websocket/server";
 import dotenv from "dotenv";
+import { characterPrompts, getSystemPrompt } from "./characterPrompts";
+
 
 dotenv.config();
 
@@ -9,20 +11,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-// Character prompts stored here
-const characterPrompts: Record<string, string> = {
-  buzzwordBot: "Use a lot of buzzy and garbage words. Be very short. Call me cutie-patutie.",
-  friendlyHelper: "Be kind and helpful, speak like a cheerful assistant.",
-  detective: "Act like a sharp detective solving mysteries, be concise and clever.",
-  professor: "Respond with detailed explanations like a knowledgeable professor.",
-};
-
-function getSystemPrompt(character: string): string {
-  return characterPrompts[character] ?? "Be neutral and helpful.";
-}
-
 export async function handleMessage(ws: WebSocket, message: WebSocket.Data) {
-  let character = "detective";
+  let character = "angrySkeleton";
   let userText = "";
   let requestId: number | undefined;
 
