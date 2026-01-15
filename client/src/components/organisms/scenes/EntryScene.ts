@@ -122,65 +122,25 @@ export class EntryScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.isInputActive) {
-      this.player.setVelocityX(0);
-      this.player.setVelocityY(0);
-      if (this.player.anims.currentAnim?.key !== "idle") {
-        this.player.play("idle", true);
-      }
-      return;
+    if (this.player) {
+      this.player.update(this.isInputActive); // just tell player if input box is active
     }
 
-    const { left, right } = this.cursors;
-    let isMoving = false;
-
-    if (left.isDown) {
-      this.player.moveLeft(this.speed);
-      isMoving = true;
-    } else if (right.isDown) {
-      this.player.moveRight(this.speed);
-      isMoving = true;
-    } else {
-      const aKey = this.input.keyboard!.keys.find(
-        (key) => key && key.keyCode === 65 && key.isDown
-      );
-      const dKey = this.input.keyboard!.keys.find(
-        (key) => key && key.keyCode === 68 && key.isDown
-      );
-
-      if (aKey) {
-        this.player.moveLeft(this.speed);
-        isMoving = true;
-      } else if (dKey) {
-        this.player.moveRight(this.speed);
-        isMoving = true;
-      } else {
-        this.player.stop();
-      }
-    }
-
-    // ensure vertical velocity is zero (character doesn't fall)
-    this.player.setVelocityY(0);
-
-
-    if (
-      this.isInTriggerZone &&
-      !this.physics.overlap(this.player.sprite, this.triggerZone)
-    ) {
+    // trigger zone logic
+    if (this.isInTriggerZone && !this.physics.overlap(this.player.sprite, this.triggerZone)) {
       this.isInTriggerZone = false;
     }
 
+    // update input box position
     if (this.isInputActive && this.inputBox) {
       const playerX = this.player.sprite.x;
       const playerY = this.player.sprite.y;
       const camera = this.cameras.main;
       const canvasRect = this.game.canvas.getBoundingClientRect();
-
       const screenX = playerX - camera.worldView.x;
       const screenY = playerY - camera.worldView.y;
       const pageX = canvasRect.left + screenX;
       const pageY = canvasRect.top + screenY;
-
       const offsetX = 75;
       const offsetY = 100;
       this.inputBox.setPosition(pageX - offsetX, pageY - offsetY);

@@ -4,38 +4,38 @@ export class PlayerCharacter {
   public sprite: Phaser.Physics.Arcade.Sprite;
   private facingRight = true;
   private scene: Phaser.Scene;
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+  private speed: number;
 
   constructor(
     scene: Phaser.Scene,
     x: number,
     y: number,
     key: string,
+    speed = 200,
     scale = 0.3
   ) {
     this.scene = scene;
-    // Create animations if they don't exist yet
+    this.speed = speed;
+    this.cursors = this.scene.input.keyboard!.createCursorKeys();
+    
+
     if (!scene.anims.exists("walk")) {
-      const walk = {
+      scene.anims.create({
         key: "walk",
-        frames: scene.anims.generateFrameNumbers(key, {
-          frames: [2, 3, 4, 5, 6, 7, 8, 9],
-        }),
+        frames: scene.anims.generateFrameNumbers(key, { frames: [2,3,4,5,6,7,8,9] }),
         frameRate: 8,
         repeat: -1,
-      };
-      scene.anims.create(walk);
+      });
     }
 
     if (!scene.anims.exists("idle")) {
-      const idle = {
+      scene.anims.create({
         key: "idle",
-        frames: scene.anims.generateFrameNumbers(key, {
-          frames: [0, 1],
-        }),
+        frames: scene.anims.generateFrameNumbers(key, { frames: [0,1] }),
         frameRate: 2,
         repeat: -1,
-      };
-      scene.anims.create(idle);
+      });
     }
 
     this.sprite = scene.physics.add.sprite(x, y, key);
@@ -44,8 +44,47 @@ export class PlayerCharacter {
     this.sprite.play("idle", true);
   }
 
-  moveLeft(speed: number) {
-    this.sprite.setVelocityX(-speed);
+  public update(isInputActive: boolean) {
+    if (isInputActive) {
+      this.stop();
+      this.setVelocityY(0);
+      return;
+    }
+
+    let isMoving = false;
+
+    // Left/Right arrow keys
+    if (this.cursors.left.isDown) {
+      this.moveLeft();
+      isMoving = true;
+    } else if (this.cursors.right.isDown) {
+      this.moveRight();
+      isMoving = true;
+    } else {
+      // Optional: A/D keys
+      const aKey = this.scene.input.keyboard!.keys.find(
+        (k) => k && k.keyCode === 65 && k.isDown
+      );
+      const dKey = this.scene.input.keyboard!.keys.find(
+        (k) => k && k.keyCode === 68 && k.isDown
+      );
+      if (aKey) {
+        this.moveLeft();
+        isMoving = true;
+      } else if (dKey) {
+        this.moveRight();
+        isMoving = true;
+      } else {
+        this.stop();
+      }
+    }
+
+    // Ensure character doesn't fall
+    this.setVelocityY(0);
+  }
+
+  private moveLeft() {
+    this.sprite.setVelocityX(-this.speed);
     if (this.facingRight) {
       this.sprite.setFlipX(true);
       this.facingRight = false;
@@ -55,8 +94,8 @@ export class PlayerCharacter {
     }
   }
 
-  moveRight(speed: number) {
-    this.sprite.setVelocityX(speed);
+  private moveRight() {
+    this.sprite.setVelocityX(this.speed);
     if (!this.facingRight) {
       this.sprite.setFlipX(false);
       this.facingRight = true;
@@ -66,7 +105,7 @@ export class PlayerCharacter {
     }
   }
 
-  stop() {
+  private stop() {
     this.sprite.setVelocityX(0);
     if (this.sprite.anims.currentAnim?.key !== "idle") {
       this.sprite.play("idle", true);
@@ -85,7 +124,7 @@ export class PlayerCharacter {
     this.sprite.play(key, ignoreIfPlaying);
   }
 
-  get anims() {
+  public get anims() {
     return this.sprite.anims;
   }
 
