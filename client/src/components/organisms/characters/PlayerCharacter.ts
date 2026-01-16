@@ -6,6 +6,8 @@ export class PlayerCharacter {
   private scene: Phaser.Scene;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed: number;
+  private keyA: Phaser.Input.Keyboard.Key;
+  private keyD: Phaser.Input.Keyboard.Key;  
 
   constructor(
     scene: Phaser.Scene,
@@ -18,7 +20,8 @@ export class PlayerCharacter {
     this.scene = scene;
     this.speed = speed;
     this.cursors = this.scene.input.keyboard!.createCursorKeys();
-    
+    this.keyA = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keyD = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
     if (!scene.anims.exists("walk")) {
       scene.anims.create({
@@ -51,32 +54,17 @@ export class PlayerCharacter {
       return;
     }
 
-    let isMoving = false;
+    var isMoving = false;
 
     // Left/Right arrow keys
-    if (this.cursors.left.isDown) {
+    if (this.cursors.left.isDown || this.keyA.isDown) {
       this.moveLeft();
       isMoving = true;
-    } else if (this.cursors.right.isDown) {
+    } else if (this.cursors.right.isDown || this.keyD.isDown) {
       this.moveRight();
       isMoving = true;
     } else {
-      // Optional: A/D keys
-      const aKey = this.scene.input.keyboard!.keys.find(
-        (k) => k && k.keyCode === 65 && k.isDown
-      );
-      const dKey = this.scene.input.keyboard!.keys.find(
-        (k) => k && k.keyCode === 68 && k.isDown
-      );
-      if (aKey) {
-        this.moveLeft();
-        isMoving = true;
-      } else if (dKey) {
-        this.moveRight();
-        isMoving = true;
-      } else {
-        this.stop();
-      }
+      this.stop();
     }
 
     // Ensure character doesn't fall
