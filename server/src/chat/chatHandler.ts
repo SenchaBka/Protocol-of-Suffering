@@ -1,6 +1,5 @@
 import WebSocket from "ws";
 import { OpenAI } from "openai";
-import { wss } from "../websocket/server";
 import dotenv from "dotenv";
 import { characterPrompts, getSystemPrompt } from "./characterPrompts";
 
