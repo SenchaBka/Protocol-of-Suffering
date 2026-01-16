@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Phaser from "phaser";
 
 interface PhaserGameProps {
@@ -14,6 +14,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
@@ -47,21 +48,35 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     };
   }, [width, height, scenes]);
 
+  // UI text handling
+  const [hint, setHint] = useState<string | null>(null);
+  const [title, setTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!gameRef.current) return;
+
+    const game = gameRef.current;
+
+    const handler = (text: string) => setHint(text);
+
+    game.events.on("ui:setHint", handler);
+    game.events.on("ui:setTitle", setTitle);
+
+    return () => {
+      game.events.off("ui:setHint", handler);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col items-center gap-4">
+      {title && <h1 className="text-6xl font-bold text-center">{title}</h1>}
       <div
         ref={containerRef}
         className="border-2 border-gray-600 rounded-lg overflow-hidden shadow-lg"
       />
-      <div className="text-center">
-        <p className="text-gray-300">Use Arrow Keys or WASD to move</p>
-        <p className="text-gray-300 mt-2">
-          Move to the red dot on the right to trigger input
-        </p>
-        <p className="text-gray-300 text-sm">
-          Press Enter to submit, Escape to cancel
-        </p>
-      </div>
+      {hint && (
+        <p className="text-gray-300 mt-2">{hint}</p>
+      )}
     </div>
   );
 };

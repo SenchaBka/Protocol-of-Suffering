@@ -43,6 +43,9 @@ export class EntryScene extends Phaser.Scene {
     const startY = this.scale.height - 40;
     this.player = new PlayerCharacter(this, startX, startY, "professor-sprite");
 
+    this.game.events.emit("ui:setTitle", "Welcome!");
+    this.game.events.emit("ui:setHint", "Use Arrow Keys or WASD to move");
+    
     this.triggerZone = this.physics.add.sprite(750, 500, "trigger-image"); 
     (this.triggerZone as Phaser.Physics.Arcade.Sprite).setImmovable(true);
     this.triggerZone.setScale(0.43);
@@ -71,6 +74,10 @@ export class EntryScene extends Phaser.Scene {
   private onEnterTriggerZone() {
     if (!this.isInTriggerZone) {
       this.isInTriggerZone = true;
+      this.game.events.emit(
+        "ui:setHint",
+        "Talk to Big Skeleton to advance the story."
+      );
       this.showInputBox();
     }
   }
