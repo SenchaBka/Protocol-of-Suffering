@@ -82,7 +82,7 @@ export function connectWebSocket(jwtToken: string) {
   });
 }
 
-export async function getAIresponse(input: string): Promise<string> {
+export async function getAIresponse(input: string, character: string = "DEFAULT"): Promise<string> {
   return new Promise(async (resolve, reject) => {
     try {
       const token = localStorage.getItem("token");
@@ -103,8 +103,13 @@ export async function getAIresponse(input: string): Promise<string> {
         responseTimeout = null;
       }, 15000);
 
-      // Send structured request the server can parse
-      socket!.send(JSON.stringify({ type: "request", id, text: input }));
+      // Send structured request including character
+      socket!.send(JSON.stringify({
+        type: "request",
+        id,
+        text: input,
+        character // <-- include character here
+      }));
     } catch (err) {
       responsePromise = null;
       if (responseTimeout) { clearTimeout(responseTimeout); responseTimeout = null; }

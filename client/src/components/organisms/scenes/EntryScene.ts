@@ -111,7 +111,7 @@ export class EntryScene extends Phaser.Scene {
 
     this.displayText("Processing your message...");
     try {
-      const processedText = await processUserMessage(result);
+      const processedText = await processUserMessage(result, "ANGRY_SKELETON");
       this.displayText(processedText);
     } catch (error: any) {
       console.error("Error getting AI response:", error);
@@ -123,7 +123,7 @@ export class EntryScene extends Phaser.Scene {
   private displayText(text: string) {
     this.textBox.setText(text);
     this.textBox.setVisible(true);
-    this.time.delayedCall(5000, () => {
+    this.time.delayedCall(10000, () => {
       this.textBox.setVisible(false);
     });
   }
